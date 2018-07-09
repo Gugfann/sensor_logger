@@ -3,6 +3,8 @@ import time
 import struct
 from math import log
 from datetime import datetime
+from collections import deque
+import numpy as np
 
 from fsm import FSM
 from sensor import Sensor
@@ -17,26 +19,79 @@ w.wiringPiSPISetup(channel, speed)
 channel0_select = 'hE'
 channel1_select = 'xE'
 
-sensor1 = Sensor(channel0_select,'Sensor 1')
-sensor2 = Sensor(channel1_select,'Sensor 2')
+# sensor0 = Sensor(channel0_select, 'Sensor 0', calibrate=False)
+sensor = Sensor(channel1_select, 'Sensor 1', calibrate=True)
 
-fsm = FSM(20,30)
+N = 60
+
+history = deque([0]*N,N)
+
+high = 75
+low = 70
+
+state_hi = False
+no_of_objects = 0
+
+t0 = time.time()
+
+f = open("data.txt","w")
+
+f.close()
+
+counter = 0
 
 while True:
-    s1 = sensor1.read()
-    s2 = sensor2.read()
+    value = sensor.read(boost=True)
+    # uncalibrated = sensor0.read(boost=True)
+    # background = sensor0.read(boost=True)
 
-    object_found = fsm.update(s1,s2)
+    history.append(value)
+    filtered = np.mean(history)
+
+    # with open("data.txt","a") as f:
+    #     f.write("{}\n".format(filtered))
+
+    # time.sleep(0.1)
+
+    object_found = False
+
+    if filtered > high and not state_hi:
+        state_hi = True
+
+    if filtered > high:
+        counter += 1
+
+    if filtered < low and state_hi:
+        state_hi = False
+
+        if counter > 200:
+            object_found = True
+
+        print("Sample count: {}".format(counter))
+        counter = 0
 
     if object_found:
-        print('... and another one!')
+        no_of_objects += 1
+        print('Object count: {}'.format(no_of_objects))
 
         now = datetime.now()
 
-        print(str(now) + "\n")
+        out = "{}, {}, {}, {}, {}, {}, {} \n".format(
+                now.year,
+                now.month,
+                now.day,
+                now.hour,
+                now.minute,
+                now.second,
+                now.microsecond)
+
+        print(out)
         with open("log.txt","a") as file:
-            file.write(str(now) + "\n")
+            file.write(out)
 
+    # t1 = time.time()
 
-   # print("Sensor 1: {}\nSensor 2: {}".format(s1, s2)) 
-    time.sleep(0.05)
+    # print("Cycle time: {}".format(t1-t0))
+    # t0 = t1
+    # print("Sensor 1: {}\nSensor 2: {}".format(s1, s2)) 
+    #time.sleep(0.05)

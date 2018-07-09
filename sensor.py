@@ -5,10 +5,13 @@ from math import log
 
 class Sensor(object):
 
-    def __init__(self, channel_select, sensor_name):
+    def __init__(self, channel_select, sensor_name, calibrate=True):
         self.channel_select = channel_select
         self.__name__ = sensor_name
-        self.calibrate()
+        self.offset = 0
+
+        if calibrate:
+            self.calibrate()
 
     def calibrate(self):
         # find the offset for the current light level
