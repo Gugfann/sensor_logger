@@ -26,7 +26,7 @@ N = 60
 
 history = deque([0]*N,N)
 
-high = 75
+high = 73
 low = 70
 
 state_hi = False
@@ -42,8 +42,6 @@ counter = 0
 
 while True:
     value = sensor.read(boost=True)
-    # uncalibrated = sensor0.read(boost=True)
-    # background = sensor0.read(boost=True)
 
     history.append(value)
     filtered = np.mean(history)
@@ -76,7 +74,7 @@ while True:
 
         now = datetime.now()
 
-        out = "{}, {}, {}, {}, {}, {}, {} \n".format(
+        out = "{}, {}, {}, {}, {}, {}, {}\n".format(
                 now.year,
                 now.month,
                 now.day,
